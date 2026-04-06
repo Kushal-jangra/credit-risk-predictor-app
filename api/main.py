@@ -1,6 +1,7 @@
 import joblib
 import pandas as pd
 from fastapi import FastAPI
+from fastapi.responses import HTMLResponse
 
 app = FastAPI()
 
@@ -13,6 +14,9 @@ CATEGORICAL_COLS = set(preprocessing["categorical_cols"])
 NUMERIC_FILL_VALUES = preprocessing["numeric_fill_values"]
 
 
+# -----------------------------
+# Preprocessing Function
+# -----------------------------
 def preprocess_input(data: dict) -> pd.DataFrame:
     processed = []
 
@@ -23,6 +27,7 @@ def preprocess_input(data: dict) -> pd.DataFrame:
             if value is None:
                 value = "Unknown"
             value = str(value)
+
             encoder = label_encoders[feature]
 
             if value not in encoder.classes_:
@@ -42,11 +47,18 @@ def preprocess_input(data: dict) -> pd.DataFrame:
     return pd.DataFrame([processed], columns=FEATURE_ORDER, dtype=float)
 
 
-@app.get("/")
-def home():
-    return {"message": "API is running"}
+# -----------------------------
+# Serve UI (NEW)
+# -----------------------------
+@app.get("/", response_class=HTMLResponse)
+def serve_ui():
+    with open("frontend/index.html", "r") as f:
+        return f.read()
 
 
+# -----------------------------
+# Prediction API
+# -----------------------------
 @app.post("/predict")
 def predict(data: dict):
     try:
